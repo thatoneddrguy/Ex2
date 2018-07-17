@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 	
 	//ros::Rate loop(100);
-	ros::Rate loop(5);
+	ros::Rate loop(1);
 	turtlesim::Pose goal_pose;
 	
 	//ros::spinOnce();
@@ -99,14 +99,40 @@ int main(int argc, char **argv)
 	//moveGoal(goal_pose, 0.01);
 
 	//moveGoal(5.8, 5.8, 0.01);
-	moveGoal(1, 0, 0.01);
-	loop.sleep();
+	//moveGoal(1, 0, 0.01);
+	//loop.sleep();
 	
 	setDesiredOrientation(0);
 	loop.sleep();
 
-	//moveGoal(1, 0, 0.01); //actually "relative" at this point...
-	//loop.sleep();
+	ros::Rate loop_rate(100);
+
+	moveGoal(4, 0, 0.01); //actually "relative" at this point...
+	loop.sleep();
+
+	setDesiredOrientation(degrees2radians(90));
+	loop.sleep();
+
+	moveGoal(0, 2, 0.01);
+	loop.sleep();
+
+	setDesiredOrientation(degrees2radians(225));
+	loop.sleep();
+
+	moveGoal(-2, -2 / sqrt(3), 0.01);
+	loop.sleep();
+
+	setDesiredOrientation(degrees2radians(135));
+	loop.sleep();
+	
+	moveGoal(-2, 2 / sqrt(3), 0.01);
+	loop.sleep();
+	
+	setDesiredOrientation(degrees2radians(270));
+	loop.sleep();
+
+	moveGoal(0, -2, 0.01);
+	loop.sleep();
 }
 
 /*void move(double speed, double distance, bool isForward)
@@ -170,7 +196,7 @@ void rotate(double angular_speed, double relative_angle, bool clockwise)
 	double current_angle = 0.0;
 	double t0 = ros::Time::now().toSec();
 	double t1;
-	ros::Rate loop_rate(5);
+	ros::Rate loop_rate(100);
 
 	do {
 		velocity_publisher.publish(vel_msg);
@@ -201,7 +227,7 @@ void moveGoal(double relative_x, double relative_y, double distance_tolerance)
 {
 	turtlesim::Pose goal_pose;
 	geometry_msgs::Twist vel_msg;
-	ros::Rate loop_rate(5);
+	ros::Rate loop_rate(100);
 	double E = 0.0;
 
 	vel_msg.linear.x = 0;
@@ -222,6 +248,7 @@ void moveGoal(double relative_x, double relative_y, double distance_tolerance)
 	goal_pose.y = turtlesim_pose.y + relative_y;
 
 	do {
+		ros::Rate loop_rate(100);		
 		double Kv = 1.0;
 		//ROS_INFO_STREAM("x: " << turtlesim_pose.x);
 		//ROS_INFO_STREAM("y: " << turtlesim_pose.y);
