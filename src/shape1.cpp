@@ -11,12 +11,13 @@ ros::Subscriber pose_subscriber;
 turtlesim::Pose turtlesim_pose;
 const double PI = 3.14159265359;
 
-void move(double speed, double distance, bool isForward);
+//void move(double speed, double distance, bool isForward);
 void rotate(double angular_speed, double relative_angle, bool clockwise);
 double degrees2radians(double angle_in_degrees);
 void setDesiredOrientation(double desired_angle_radians);
 
-void moveGoal(turtlesim::Pose goal_pose, double distance_tolerance);
+//void moveGoal(turtlesim::Pose goal_pose, double distance_tolerance);
+void moveGoal(double relative_x, double relative_y, double distance_tolerance);
 void poseCallback(const turtlesim::Pose::ConstPtr & pose_message);
 double getDistance(double x1, double y1, double x2, double y2);
 
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
 	bool isForward, clockwise;
 	
 	velocity_publisher = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 1000);
-	pose_subscriber = nh.subscribe("/turtle1/pose", 10, poseCallback);
+	pose_subscriber = nh.subscribe("/turtle1/pose", 1000, poseCallback);
 	
 	/*
 	ros::Rate loop_rate(1000);
@@ -78,7 +79,8 @@ int main(int argc, char **argv)
 	*/
 
 	
-	ros::Rate loop(100);
+	//ros::Rate loop(100);
+	ros::Rate loop(5);
 	turtlesim::Pose goal_pose;
 	
 	//ros::spinOnce();
@@ -91,17 +93,23 @@ int main(int argc, char **argv)
 	loop.sleep();
 	*/
 	
-	goal_pose.x = turtlesim_pose.x + 1;
-	goal_pose.y = turtlesim_pose.y + 1;
-	goal_pose.theta = 0;
-	moveGoal(goal_pose, 0.01);
+	//goal_pose.x = turtlesim_pose.x + 6;
+	//goal_pose.y = turtlesim_pose.y + 6;
+	//goal_pose.theta = 0;
+	//moveGoal(goal_pose, 0.01);
+
+	//moveGoal(5.8, 5.8, 0.01);
+	moveGoal(1, 0, 0.01);
 	loop.sleep();
 	
 	setDesiredOrientation(0);
 	loop.sleep();
+
+	//moveGoal(1, 0, 0.01); //actually "relative" at this point...
+	//loop.sleep();
 }
 
-void move(double speed, double distance, bool isForward)
+/*void move(double speed, double distance, bool isForward)
 {
 	geometry_msgs::Twist vel_msg;
 	double Kv = 1.0;
@@ -123,7 +131,7 @@ void move(double speed, double distance, bool isForward)
 
 	double t0 = ros::Time::now().toSec();
 	double current_distance = 0.0;
-	ros::Rate loop_rate(100);
+	ros::Rate loop_rate(10);
 	double t1;
 
 	do {
@@ -136,7 +144,7 @@ void move(double speed, double distance, bool isForward)
 
 	vel_msg.linear.x = 0;
 	velocity_publisher.publish(vel_msg);
-}
+}*/
 
 void rotate(double angular_speed, double relative_angle, bool clockwise)
 {
@@ -162,7 +170,7 @@ void rotate(double angular_speed, double relative_angle, bool clockwise)
 	double current_angle = 0.0;
 	double t0 = ros::Time::now().toSec();
 	double t1;
-	ros::Rate loop_rate(100);
+	ros::Rate loop_rate(5);
 
 	do {
 		velocity_publisher.publish(vel_msg);
@@ -189,18 +197,35 @@ void setDesiredOrientation(double desired_angle_radians)
 }
 
 //void moveGoal(turtlesim::Pose goal_pose, double distance_tolerance)
-void moveGoal(double relative_x, double relative_y, double distance_tolerance
+void moveGoal(double relative_x, double relative_y, double distance_tolerance)
 {
 	turtlesim::Pose goal_pose;
 	geometry_msgs::Twist vel_msg;
-	ros::Rate loop_rate(100);
+	ros::Rate loop_rate(5);
 	double E = 0.0;
+
+	vel_msg.linear.x = 0;
+	vel_msg.linear.y = 0;
+	vel_msg.linear.z = 0;
+	vel_msg.angular.x = 0;
+	vel_msg.angular.y = 0;
+	vel_msg.angular.z = 0;
+	velocity_publisher.publish(vel_msg);
+	ros::spinOnce();
+	loop_rate.sleep();
+	
+	ROS_INFO_STREAM("x: " << turtlesim_pose.x);
+	ROS_INFO_STREAM("y: " << turtlesim_pose.y);
+	ROS_INFO_STREAM("theta: " << turtlesim_pose.theta);
 
 	goal_pose.x = turtlesim_pose.x + relative_x;
 	goal_pose.y = turtlesim_pose.y + relative_y;
 
 	do {
 		double Kv = 1.0;
+		//ROS_INFO_STREAM("x: " << turtlesim_pose.x);
+		//ROS_INFO_STREAM("y: " << turtlesim_pose.y);
+		//ROS_INFO_STREAM("theta: " << turtlesim_pose.theta);
 		double e = getDistance(turtlesim_pose.x, turtlesim_pose.y, goal_pose.x, goal_pose.y);
 
 		vel_msg.linear.x = (Kv * e);
@@ -213,17 +238,23 @@ void moveGoal(double relative_x, double relative_y, double distance_tolerance
 
 		vel_msg.angular.z = Kw * (atan2(goal_pose.y - turtlesim_pose.y, goal_pose.x - turtlesim_pose.x) - turtlesim_pose.theta);
 		velocity_publisher.publish(vel_msg);
+		ROS_INFO_STREAM("publish called");
 		ros::spinOnce();
-		ROS_INFO_STREAM("x: " << turtlesim_pose.x);
-		ROS_INFO_STREAM("y: " << turtlesim_pose.y);
-		ROS_INFO_STREAM("theta: " << turtlesim_pose.theta);
-		ROS_INFO_STREAM("goal x: " << goal_pose.x);
-		ROS_INFO_STREAM("goal y: " << goal_pose.y);
-		ROS_INFO_STREAM("goal theta: " << goal_pose.theta);
+		ROS_INFO_STREAM("spinOnce called");
+		//ROS_INFO_STREAM("x: " << turtlesim_pose.x);
+		//ROS_INFO_STREAM("y: " << turtlesim_pose.y);
+		//ROS_INFO_STREAM("theta: " << turtlesim_pose.theta);
+		//ROS_INFO_STREAM("goal x: " << goal_pose.x);
+		//ROS_INFO_STREAM("goal y: " << goal_pose.y);
+		//ROS_INFO_STREAM("goal theta: " << goal_pose.theta);
 		loop_rate.sleep();
+		ROS_INFO_STREAM("sleep called");
 	}while(getDistance(turtlesim_pose.x, turtlesim_pose.y, goal_pose.x, goal_pose.y) > distance_tolerance);
 
-	std::cout << "end move goal" << std::endl;
+	ROS_INFO_STREAM("x: " << turtlesim_pose.x);
+	ROS_INFO_STREAM("y: " << turtlesim_pose.y);
+	ROS_INFO_STREAM("theta: " << turtlesim_pose.theta);
+	cout << "end move goal" << endl;
 	vel_msg.linear.x = 0;
 	vel_msg.angular.z = 0;
 	velocity_publisher.publish(vel_msg);
@@ -234,6 +265,10 @@ void poseCallback(const turtlesim::Pose::ConstPtr & pose_message)
 	turtlesim_pose.x = pose_message->x;
 	turtlesim_pose.y = pose_message->y;
 	turtlesim_pose.theta = pose_message->theta;
+	/*ROS_INFO_STREAM("x: " << turtlesim_pose.x);
+	ROS_INFO_STREAM("y: " << turtlesim_pose.y);
+	ROS_INFO_STREAM("theta: " << turtlesim_pose.theta);*/
+	ROS_INFO_STREAM("turtlesim_pose updated");
 }
 
 double getDistance(double x1, double y1, double x2, double y2)
